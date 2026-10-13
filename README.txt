@@ -1,6 +1,6 @@
 Stanislav 3D
 
-Сайт: https://krygliakovstudy-png.github.io/stanislav-portfolio/
+Сайт: https://krugliakovstudy-eng.github.io/stanislav-3d-portfolio/
 
 Для запуска на компьютере: node server.cjs
 Затем откройте http://127.0.0.1:4173.

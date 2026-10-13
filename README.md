@@ -2,7 +2,7 @@
 
 Моё портфолио с 3D-моделью и фирменным стилем Coon Clean.
 
-[Открыть сайт](https://krygliakovstudy-png.github.io/stanislav-portfolio/)
+[Открыть сайт](https://krugliakovstudy-eng.github.io/stanislav-3d-portfolio/)
 
 ## Запуск
 
