@@ -1,13 +1,15 @@
 const form = document.getElementById('contactForm');
 const status = document.getElementById('formStatus');
+const recipient = 'krugliakovstudy@gmail.com';
 const rules = {
-  name: (v) => (v.length >= 2 ? '' : 'Введите имя (минимум 2 символа).'),
+  name: (v) => (v.length >= 2 && v.length <= 80 ? '' : 'Введите имя (от 2 до 80 символов).'),
   email: (v) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : 'Введите корректный email.',
+    v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && !form.elements.email.validity.typeMismatch
+      ? '' : 'Введите корректный email.',
   subject: (v) =>
     ['3d', 'branding'].includes(v) ? '' : 'Выберите тему проекта.',
   message: (v) =>
-    v.length >= 10 ? '' : 'Расскажите подробнее (минимум 10 символов).',
+    v.length >= 10 && v.length <= 3000 ? '' : 'Введите сообщение (от 10 до 3000 символов).',
 };
 function validate(name) {
   const input = form.elements[name];
@@ -25,29 +27,45 @@ Object.keys(rules).forEach((name) => {
     status.textContent = '';
   });
 });
-form.addEventListener('submit', (event) => {
-  event.preventDefault();
+function prepareRequest() {
   const valid = Object.keys(rules).map(validate).every(Boolean);
   if (!valid) {
     status.textContent = 'Проверьте отмеченные поля.';
     status.className = 'form-status error-status';
     form.querySelector('[aria-invalid="true"]').focus();
-    return;
+    return null;
   }
   const values = Object.fromEntries(new FormData(form));
   const topic = form.elements.subject.selectedOptions[0].textContent;
   const text = `Заявка на проект\n\nИмя: ${values.name.trim()}\nEmail: ${values.email.trim()}\nТема: ${topic}\n\n${values.message.trim()}\n`;
-  const url = URL.createObjectURL(
-    new Blob(['\ufeff', text], { type: 'text/plain;charset=utf-8' }),
-  );
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'project-request.txt';
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return { text, topic };
+}
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const request = prepareRequest();
+  if (!request) return;
+  const subject = encodeURIComponent(`Заявка с портфолио: ${request.topic}`);
+  const body = encodeURIComponent(request.text);
+  window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
   status.textContent =
-    'Заявка подготовлена к скачиванию. Она не отправлена: отправка из формы пока не подключена.';
-  status.className = 'form-status success';
+    'Письмо подготовлено. Отправьте его из почтового приложения. Если оно не открылось, скопируйте заявку и отправьте её на ' + recipient + '.';
+  status.className = 'form-status';
+});
+document.getElementById('copyRequest').addEventListener('click', async () => {
+  const request = prepareRequest();
+  if (!request) return;
+  try {
+    await navigator.clipboard.writeText(request.text);
+    document.getElementById('requestFallback').hidden = true;
+    status.textContent = 'Заявка скопирована. Вставьте её в письмо на ' + recipient + '.';
+    status.className = 'form-status success';
+  } catch {
+    const text = document.getElementById('requestText');
+    text.value = request.text;
+    document.getElementById('requestFallback').hidden = false;
+    text.focus();
+    text.select();
+    status.textContent = 'Скопируйте выделенный текст и отправьте его на ' + recipient + '.';
+    status.className = 'form-status';
+  }
 });

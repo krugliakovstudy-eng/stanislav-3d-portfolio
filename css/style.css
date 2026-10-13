@@ -832,6 +832,7 @@ body {
 }
 .slide.active {
   pointer-events: auto;
+  transform: translateX(0);
 }
 .slide::before {
   display: none;
@@ -981,6 +982,28 @@ input:disabled {
 }
 .form-note {
   margin-bottom: 24px;
+}
+.contact-list a {
+  overflow-wrap: anywhere;
+}
+.copy-request {
+  margin-top: 12px;
+}
+#requestFallback {
+  margin-top: 18px;
+}
+#requestFallback label {
+  display: block;
+  margin-bottom: 8px;
+}
+#requestText {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
 }
 .form-row input,
 .form-row textarea,
