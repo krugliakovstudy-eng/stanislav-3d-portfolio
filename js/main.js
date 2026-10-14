@@ -1,3 +1,4 @@
+// Общее мобильное меню для трёх страниц.
 const menuToggle = document.querySelector('.menu-toggle');
 const mainNav = document.querySelector('.main-nav');
 function setMenu(open) {

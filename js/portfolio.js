@@ -1,4 +1,5 @@
-const filterButtons = [...document.querySelectorAll('.filter-btn')];
+// Скрываем работы, которые не относятся к выбранной категории.
+const filterButtons = document.querySelectorAll('.filter-btn');
 const projects = document.querySelectorAll(
   '.project-card, .filterable-project',
 );
@@ -18,9 +19,8 @@ function filterProjects(filter) {
 filterButtons.forEach((button) =>
   button.addEventListener('click', () => {
     filterProjects(button.dataset.filter);
-    const url = new URL(location);
-    url.searchParams.set('filter', button.dataset.filter);
-    history.replaceState(null, '', url);
+    history.replaceState(null, '', '?filter=' + button.dataset.filter + location.hash);
   }),
 );
+// Ссылка с главной может сразу открыть категорию «Брендинг».
 filterProjects(new URLSearchParams(location.search).get('filter') || 'all');

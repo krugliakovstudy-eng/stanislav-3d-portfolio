@@ -1,25 +1,31 @@
 const form = document.getElementById('contactForm');
 const status = document.getElementById('formStatus');
 const recipient = 'krugliakovstudy@gmail.com';
-const rules = {
-  name: (v) => (v.length >= 2 && v.length <= 80 ? '' : 'Введите имя (от 2 до 80 символов).'),
-  email: (v) =>
-    v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && !form.elements.email.validity.typeMismatch
-      ? '' : 'Введите корректный email.',
-  subject: (v) =>
-    ['3d', 'branding'].includes(v) ? '' : 'Выберите тему проекта.',
-  message: (v) =>
-    v.length >= 10 && v.length <= 3000 ? '' : 'Введите сообщение (от 10 до 3000 символов).',
-};
+const fields = ['name', 'email', 'subject', 'message'];
+
+// Обычные условия для каждого из четырёх полей.
 function validate(name) {
   const input = form.elements[name];
-  const error = rules[name](input.value.trim());
+  const value = input.value.trim();
+  let error = '';
+  if (name === 'name' && (value.length < 2 || value.length > 80)) {
+    error = 'Введите имя (от 2 до 80 символов).';
+  }
+  if (name === 'email' && (value.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || input.validity.typeMismatch)) {
+    error = 'Введите корректный email.';
+  }
+  if (name === 'subject' && value !== '3d' && value !== 'branding') {
+    error = 'Выберите тему проекта.';
+  }
+  if (name === 'message' && (value.length < 10 || value.length > 3000)) {
+    error = 'Введите сообщение (от 10 до 3000 символов).';
+  }
   document.getElementById(`${name}Error`).textContent = error;
   input.setAttribute('aria-invalid', String(Boolean(error)));
   input.closest('.form-row').classList.toggle('invalid', Boolean(error));
   return !error;
 }
-Object.keys(rules).forEach((name) => {
+fields.forEach((name) => {
   const input = form.elements[name];
   input.addEventListener('blur', () => validate(name));
   input.addEventListener('input', () => {
@@ -28,18 +34,24 @@ Object.keys(rules).forEach((name) => {
   });
 });
 function prepareRequest() {
-  const valid = Object.keys(rules).map(validate).every(Boolean);
+  let valid = true;
+  for (const name of fields) {
+    if (!validate(name)) valid = false;
+  }
   if (!valid) {
     status.textContent = 'Проверьте отмеченные поля.';
     status.className = 'form-status error-status';
     form.querySelector('[aria-invalid="true"]').focus();
     return null;
   }
-  const values = Object.fromEntries(new FormData(form));
+  const name = form.elements.name.value.trim();
+  const email = form.elements.email.value.trim();
+  const message = form.elements.message.value.trim();
   const topic = form.elements.subject.selectedOptions[0].textContent;
-  const text = `Заявка на проект\n\nИмя: ${values.name.trim()}\nEmail: ${values.email.trim()}\nТема: ${topic}\n\n${values.message.trim()}\n`;
+  const text = `Заявка на проект\n\nИмя: ${name}\nEmail: ${email}\nТема: ${topic}\n\n${message}\n`;
   return { text, topic };
 }
+// mailto открывает письмо; отправку посетитель подтверждает сам.
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   const request = prepareRequest();

@@ -1,97 +1,65 @@
+// Показываем один слайд и выделяем его индикатор.
 const slider = document.querySelector('.hero-slider');
-const slides = [...slider.querySelectorAll('.slide')];
-const dotsContainer = document.getElementById('sliderDots');
-const pause = document.getElementById('pauseSlide');
+const slides = document.querySelectorAll('.slide');
+const dots = document.querySelectorAll('.slider-dot');
+const pauseButton = document.getElementById('pauseSlide');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-let current = 0,
-  paused = reducedMotion.matches,
-  timer;
-const dots = slides.map((slide, index) => {
-  const dot = document.createElement('button');
-  dot.className = 'slider-dot';
-  dot.setAttribute(
-    'aria-label',
-    `Слайд ${index + 1}: ${slide.querySelector('h2').textContent}`,
-  );
-  dot.addEventListener('click', () => {
-    showSlide(index);
-    schedule();
-  });
-  dotsContainer.append(dot);
-  return dot;
-});
-function showSlide(index) {
-  current = (index + slides.length) % slides.length;
-  slides.forEach((slide, i) => {
-    slide.classList.toggle('active', i === current);
-    slide.inert = i !== current;
-    slide.setAttribute('aria-hidden', String(i !== current));
-  });
-  dots.forEach((dot, i) => {
-    dot.classList.toggle('active', i === current);
-    dot.setAttribute('aria-pressed', String(i === current));
+let currentSlide = 0;
+let paused = reducedMotion.matches;
+
+function showSlide(number) {
+  currentSlide = (number + slides.length) % slides.length;
+  slides.forEach((slide, index) => {
+    const active = index === currentSlide;
+    slide.classList.toggle('active', active);
+    slide.inert = !active;
+    slide.setAttribute('aria-hidden', String(!active));
+    dots[index].classList.toggle('active', active);
+    dots[index].setAttribute('aria-pressed', String(active));
   });
 }
-function schedule() {
-  clearInterval(timer);
-  pause.setAttribute('aria-pressed', String(paused));
-  pause.setAttribute(
-    'aria-label',
-    paused ? 'Запустить слайдер' : 'Остановить слайдер',
-  );
-  pause.textContent = paused ? '▷' : 'Ⅱ';
-  if (
-    !paused &&
-    !document.hidden &&
-    !slider.matches(':hover') &&
-    !slider.contains(document.activeElement)
-  )
-    timer = setInterval(() => showSlide(current + 1), 5500);
+
+function updatePauseButton() {
+  pauseButton.textContent = paused ? '▷' : 'Ⅱ';
+  pauseButton.setAttribute('aria-pressed', String(paused));
+  pauseButton.setAttribute('aria-label', paused ? 'Запустить слайдер' : 'Остановить слайдер');
 }
-document.getElementById('nextSlide').addEventListener('click', () => {
-  showSlide(current + 1);
-  schedule();
+
+document.getElementById('nextSlide').addEventListener('click', () => showSlide(currentSlide + 1));
+document.getElementById('prevSlide').addEventListener('click', () => showSlide(currentSlide - 1));
+dots.forEach((dot, index) => {
+  dot.addEventListener('click', () => showSlide(index));
 });
-document.getElementById('prevSlide').addEventListener('click', () => {
-  showSlide(current - 1);
-  schedule();
-});
-pause.addEventListener('click', () => {
+pauseButton.addEventListener('click', () => {
   paused = !paused;
-  schedule();
+  updatePauseButton();
 });
-slider.addEventListener('keydown', (e) => {
-  if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
-    e.preventDefault();
-    showSlide(current + (e.key === 'ArrowRight' ? 1 : -1));
+slider.addEventListener('keydown', (event) => {
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    showSlide(currentSlide + (event.key === 'ArrowRight' ? 1 : -1));
   }
 });
-for (const type of ['mouseenter', 'mouseleave', 'focusin'])
-  slider.addEventListener(type, schedule);
-slider.addEventListener('focusout', () => setTimeout(schedule, 0));
-document.addEventListener('visibilitychange', schedule);
+
+// Свайп на телефоне.
+let touchStart = 0;
+slider.addEventListener('touchstart', (event) => {
+  touchStart = event.changedTouches[0].clientX;
+}, { passive: true });
+slider.addEventListener('touchend', (event) => {
+  const distance = event.changedTouches[0].clientX - touchStart;
+  if (Math.abs(distance) > 50) showSlide(currentSlide + (distance < 0 ? 1 : -1));
+}, { passive: true });
+
+// Один таймер. Пока посетитель работает со слайдером, слайды не меняются.
+setInterval(() => {
+  if (!paused && !document.hidden && !slider.matches(':hover, :focus-within')) {
+    showSlide(currentSlide + 1);
+  }
+}, 5500);
 reducedMotion.addEventListener('change', () => {
   paused = reducedMotion.matches;
-  schedule();
+  updatePauseButton();
 });
-let touchX;
-slider.addEventListener(
-  'touchstart',
-  (e) => {
-    touchX = e.changedTouches[0].clientX;
-  },
-  { passive: true },
-);
-slider.addEventListener(
-  'touchend',
-  (e) => {
-    const dx = e.changedTouches[0].clientX - touchX;
-    if (Math.abs(dx) > 50) {
-      showSlide(current + (dx < 0 ? 1 : -1));
-      schedule();
-    }
-  },
-  { passive: true },
-);
 showSlide(0);
-schedule();
+updatePauseButton();
